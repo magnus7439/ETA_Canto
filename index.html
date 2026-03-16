@@ -67,22 +67,30 @@ function tocar(tipo, media, cantor, musica) {
     statusDisplay.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
     if (tipo === 'drive') {
-        // Modo Áudio: Esconde o YouTube e limpa o vídeo anterior
+        // Limpa o YouTube para não ficar tocando no fundo
         yt.style.display = 'none';
         yt.src = ''; 
-        
         audio.style.display = 'block';
-        // Se o link no JSON começar com http, ele usa direto (Dropbox). 
-        // Se for só o ID, usa o link do Google Drive.
-        audio.src = media.startsWith('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
+
+        if (media.startsWith('http')) {
+            // Caso 1: Link direto (Dropbox com raw=1)
+            audio.src = media;
+        } else {
+            // Caso 2: ID do Google Drive
+            // Usamos o link "uc?export=open" que é o mais compatível
+            audio.src = `https://docs.google.com/uc?export=open&id=${media}`;
+        }
+        
         audio.load();
-        audio.play();
+        audio.play().catch(e => {
+            console.log("Erro no autoplay do Drive:", e);
+            statusDisplay.innerHTML += "<br><small style='color:black'>⚠️ Clique no Play do player abaixo</small>";
+        });
+
     } else if (tipo === 'youtube') {
-        // Modo YouTube: Para o áudio e esconde o player de áudio
+        // Caso 3: YouTube
         audio.pause();
         audio.style.display = 'none';
-        
-        // Mostra o vídeo e carrega o link de embed do YouTube
         yt.style.display = 'block';
         yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
     }
