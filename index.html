@@ -1,41 +1,40 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - CANTO Domingo à Tarde</title>
+    <title>ETA - Roteiro Musical NEW</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        /* Configuração do Fundo com a Textura Roxa */
+        /* CONFIGURAÇÃO DE FUNDO E TEXTURA */
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 10px; /* Reduzido para celular */
+            padding: 10px;
             color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            /* Adiciona a imagem de fundo */
-            background-image: url('image_6.png'); /* Certifique-se que o nome do arquivo está correto */
+            background-image: url('image_6.png'); /* Nome do arquivo que você subiu */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed; /* O fundo fica fixo ao rolar a página */
+            background-attachment: fixed;
         }
 
-        /* Efeito de Vidro (Glassmorphism) para os containers */
+        /* EFEITO DE VIDRO NOS PAINÉIS */
         .glass-panel {
-            background: rgba(20, 20, 20, 0.7); /* Fundo escuro semi-transparente */
+            background: rgba(20, 20, 20, 0.75);
             border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px); /* Efeito de desfoque no fundo */
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
-        /* Player Principal Otimizado */
         .master-player {
             position: sticky;
             top: 10px;
@@ -47,166 +46,63 @@
             margin-bottom: 20px;
         }
 
-        /* Ajuste do Título "Tocando" para Celular */
         #now-playing {
             font-weight: bold;
             margin-bottom: 12px;
-            font-size: 1.2em; /* Fonte maior */
-            min-height: 50px; /* Mais espaço vertical */
+            font-size: 1.1em;
+            min-height: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        #now-playing small {
-            font-size: 0.8em;
-            opacity: 0.8;
-            margin-top: 2px;
-        }
 
-        /* Player de Áudio Nativo */
-        audio {
-            width: 100%;
-            border-radius: 30px;
-            outline: none;
-        }
-        /* Customizando cores do player nativo (em browsers compatíveis) */
-        audio::-webkit-media-controls-panel { background-color: rgba(255,255,255,0.9); }
-        audio::-webkit-media-controls-current-time-display,
-        audio::-webkit-media-controls-time-remaining-display { color: #333; }
+        audio { width: 100%; border-radius: 30px; }
+        #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
 
-        /* Container do YouTube */
-        #yt-player {
-            display: none;
-            width: 100%;
-            aspect-ratio: 16/9;
-            border-radius: 10px;
-            border: none;
-            margin-top: 15px;
-        }
-
-        /* Lista de Músicas Otimizada para Celular */
-        ul {
-            list-style: none;
-            padding: 0;
-            width: 95%;
-            max-width: 700px;
-            margin: 0;
-        }
-
-        /* Item da Lista (Li) - Estrutura Empilhada para Celular */
-        li {
-            margin: 12px 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column; /* Elementos empilhados verticalmente */
-            gap: 12px; /* Espaço entre as linhas do item */
-            align-items: stretch;
-        }
-
-        /* Primeira Linha do Item (Controles e Info) */
-        .li-main-row {
-            display: grid;
-            grid-template-columns: 40px 40px 1fr 50px; /* Larguras fixas para controles */
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Segunda Linha do Item (Notas) */
-        .li-notes-row {
-            width: 100%;
-        }
-
-        /* Controles da Lista */
-        .drag-handle {
-            cursor: grab;
-            color: rgba(255,255,255,0.4);
-            font-size: 24px;
-            text-align: center;
-            padding: 5px; /* Maior área de toque */
-        }
+        /* LISTA MOBILE FRIENDLY */
+        ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
+        li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
         
-        /* Checkbox maior para celular */
-        input[type="checkbox"] {
-            transform: scale(1.5);
-            margin: 0;
-            cursor: pointer;
-        }
+        .drag-handle { cursor: grab; color: rgba(255,255,255,0.3); font-size: 22px; }
+        input[type="checkbox"] { transform: scale(1.4); }
 
-        /* Informações da Música */
-        .song-info {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; /* Evita quebra de layout com nomes longos */
-        }
-        .interpreter {
-            color: #1db954; /* Verde Spotify */
-            font-weight: bold;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .song-title {
-            font-size: 1.1em;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis; /* Adiciona "..." em nomes longos */
-        }
+        .song-info { display: flex; flex-direction: column; overflow: hidden; }
+        .interpreter { color: #1db954; font-weight: bold; font-size: 0.8em; text-transform: uppercase; }
+        .song-title { font-size: 1.05em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Campo de Notas Otimizado */
         .notes-field {
             background: rgba(255, 255, 255, 0.05);
             border: 1px dashed rgba(255, 255, 255, 0.2);
             color: #ccc;
             font-size: 0.9em;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
-            min-height: 25px;
+            min-height: 20px;
             outline: none;
-            width: 100%;
-            box-sizing: border-box; /* Garante padding correto */
-        }
-        .notes-field:focus {
-            border-color: #1db954;
-            background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Botão Play Maior e mais Tátil */
         .btn-play {
             background: rgba(255, 255, 255, 0.1);
             color: #1db954;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: none;
             border-radius: 50%;
-            width: 50px; /* Aumentado para celular */
-            height: 50px; /* Aumentado para celular */
+            width: 48px;
+            height: 48px;
             cursor: pointer;
-            font-size: 1.4em;
+            font-size: 1.3em;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent; /* Remove destaque de toque no mobile */
-        }
-        .btn-play:active {
-            background: rgba(29, 185, 84, 0.2);
-            transform: scale(0.95);
         }
 
-        /* Estilo para item marcado como concluído */
-        .done {
-            opacity: 0.3;
-            filter: grayscale(100%);
-        }
-        .done .notes-field {
-            text-decoration: line-through;
-        }
-
+        .done { opacity: 0.3; filter: grayscale(100%); }
     </style>
 </head>
 <body>
 
     <div class="master-player glass-panel">
-        <div id="now-playing">Selecione uma faixa</div>
+        <div id="now-playing">Carregando planilha...</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
     </div>
@@ -214,21 +110,35 @@
     <ul id="playlist-sortable"></ul>
 
     <script>
-        // URL do seu Gist com a versão mais recente
-        const JSON_URL = 'https://gist.githubusercontent.com/magnus7439/66603363ef03af372c10cb3d22e38d45/raw/dados.json';
-        
+        // CONEXÃO GOOGLE SHEETS
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
+
         async function carregar() {
             try {
-                // Adiciona um timestamp para evitar cache do Gist
-                const r = await fetch(JSON_URL + '?t=' + new Date().getTime());
-                const dados = await r.json();
+                const r = await fetch(CSV_URL + '&t=' + new Date().getTime());
+                const texto = await r.text();
+                
+                // Conversão de CSV para objeto
+                const linhas = texto.split('\n').map(l => l.trim()).filter(l => l);
+                const dados = linhas.slice(1).map(linha => {
+                    const cols = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    return {
+                        id: cols[0]?.replace(/"/g, ''),
+                        cantor: cols[1]?.replace(/"/g, ''),
+                        musica: cols[2]?.replace(/"/g, ''),
+                        media: cols[3]?.replace(/"/g, ''),
+                        tipo: cols[4]?.replace(/"/g, ''),
+                        notas: cols[5]?.replace(/"/g, '')
+                    };
+                }).filter(item => item.musica);
+
                 const lista = document.getElementById('playlist-sortable');
                 lista.innerHTML = '';
+                document.getElementById('now-playing').innerText = "Selecione uma faixa";
+
                 dados.forEach(item => {
                     const li = document.createElement('li');
-                    li.className = 'glass-panel'; // Aplica efeito de vidro nos itens
-                    
-                    // Estrutura interna modificada para melhor layout mobile
+                    li.className = 'glass-panel';
                     li.innerHTML = `
                         <div class="li-main-row">
                             <div class="drag-handle">⋮⋮</div>
@@ -239,15 +149,15 @@
                             </div>
                             <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
                         </div>
-                        <div class="li-notes-row">
-                            <div class="notes-field" contenteditable="true" placeholder="Notas...">${item.notas || ''}</div>
-                        </div>
+                        <div class="notes-field" contenteditable="true">${item.notas || ''}</div>
                     `;
                     lista.appendChild(li);
                 });
-                // Ativa a funcionalidade de arrastar
+
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
-            } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista de músicas."; }
+            } catch (e) { 
+                document.getElementById('now-playing').innerText = "Erro ao carregar planilha.";
+            }
         }
 
         function tocar(tipo, media, cantor, musica) {
@@ -257,28 +167,23 @@
             
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
-            // Reseta e esconde ambos os players antes de iniciar o novo
             audio.pause();
             audio.src = "";
             yt.src = "";
             audio.style.display = 'none';
             yt.style.display = 'none';
 
-            if (tipo === 'dropbox' || tipo === 'drive') {
+            if (tipo.toLowerCase() === 'dropbox' || tipo.toLowerCase() === 'drive') {
                 audio.style.display = 'block';
-                // O link no JSON já deve estar com &raw=1 para Dropbox
-                audio.src = media; 
+                audio.src = media;
                 audio.load();
-                // Tenta autoplay, browsers modernos podem bloquear sem interação prévia
-                audio.play().catch(e => console.log("Autoplay de áudio bloqueado"));
-            } else if (tipo === 'youtube') {
+                audio.play().catch(e => console.log("Play manual necessário"));
+            } else if (tipo.toLowerCase() === 'youtube') {
                 yt.style.display = 'block';
-                // Carrega o vídeo do YouTube com autoplay
-                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1&modestbranding=1&rel=0`;
+                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
             }
         }
-        
-        // Inicia o carregamento da lista
+
         carregar();
     </script>
 </body>
