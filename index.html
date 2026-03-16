@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical de novo</title>
+    <title>ETA - Aula do Roberto</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background-image: url('image_6.png'); /* Usando sua imagem de cortina */
+            background-image: url('image_6.png'); 
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -118,13 +118,26 @@
         <div id="now-playing">Carregando roteiro...</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
-        <button class="btn-reset" onclick="resetarOrdem()">Limpar Ordem Personalizada</button>
+        <button class="btn-reset" onclick="resetarTudo()">Resetar Ordem e Notas</button>
     </div>
 
     <ul id="playlist-sortable"></ul>
 
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
+
+        // Carrega as notas salvas do LocalStorage
+        function getNotasSalvas() {
+            const notas = localStorage.getItem('minhas_notas_eta');
+            return notas ? JSON.parse(notas) : {};
+        }
+
+        // Salva uma nota específica
+        function salvarNota(id, texto) {
+            const notas = getNotasSalvas();
+            notas[id] = texto;
+            localStorage.setItem('minhas_notas_eta', JSON.stringify(notas));
+        }
 
         async function carregar() {
             try {
@@ -140,11 +153,11 @@
                         musica: cols[2]?.replace(/"/g, '') || 'Título',
                         media: cols[3]?.replace(/"/g, ''),
                         tipo: (cols[4]?.replace(/"/g, '') || '').toLowerCase().trim(),
-                        notas: cols[5]?.replace(/"/g, '') || ''
+                        notasPlanilha: cols[5]?.replace(/"/g, '') || ''
                     };
                 }).filter(item => item.musica && item.musica !== 'Musica');
 
-                // --- RECUPERAR ORDEM SALVA ---
+                // Aplicar Ordem Salva
                 const ordemSalva = localStorage.getItem('minha_ordem_eta');
                 if (ordemSalva) {
                     const idsOrdem = JSON.parse(ordemSalva);
@@ -157,6 +170,7 @@
                     });
                 }
 
+                const notasLocais = getNotasSalvas();
                 const lista = document.getElementById('playlist-sortable');
                 lista.innerHTML = '';
                 document.getElementById('now-playing').innerText = "Selecione uma música";
@@ -165,6 +179,10 @@
                     const li = document.createElement('li');
                     li.className = 'glass-panel';
                     li.setAttribute('data-id', item.id);
+                    
+                    // Prioriza a nota salva localmente, senão usa a da planilha
+                    const notaFinal = notasLocais[item.id] !== undefined ? notasLocais[item.id] : item.notasPlanilha;
+
                     li.innerHTML = `
                         <div class="li-main-row">
                             <div class="drag-handle">⋮⋮</div>
@@ -175,7 +193,7 @@
                             </div>
                             <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
                         </div>
-                        <div class="notes-field" contenteditable="true">${item.notas}</div>
+                        <div class="notes-field" contenteditable="true" oninput="salvarNota('${item.id}', this.innerText)">${notaFinal}</div>
                     `;
                     lista.appendChild(li);
                 });
@@ -194,9 +212,10 @@
             }
         }
 
-        function resetarOrdem() {
-            if (confirm("Deseja voltar para a ordem original da planilha?")) {
+        function resetarTudo() {
+            if (confirm("Isso apagará sua ordem personalizada e TODAS as notas salvas no aparelho. Confirmar?")) {
                 localStorage.removeItem('minha_ordem_eta');
+                localStorage.removeItem('minhas_notas_eta');
                 window.location.reload();
             }
         }
@@ -212,7 +231,6 @@
 
             if (tipo === 'drive' || tipo === 'dropbox') {
                 audio.style.display = 'block';
-                // Lógica para links diretos ou Drive
                 audio.src = media.includes('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
                 audio.load();
                 audio.play().catch(() => {
