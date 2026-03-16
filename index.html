@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Aula do Roberto</title>
+    <title>ETA - Roteiro Musical</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -74,7 +74,7 @@
 
         /* LISTA MOBILE FRIENDLY */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
-        li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; transition: opacity 0.3s; }
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
         
         .drag-handle { cursor: grab; color: rgba(255,255,255,0.3); font-size: 22px; }
@@ -109,7 +109,8 @@
             justify-content: center;
         }
 
-        .done { opacity: 0.3; filter: grayscale(100%); }
+        /* Estilo para item marcado como concluído */
+        .done { opacity: 0.25; filter: grayscale(100%); }
     </style>
 </head>
 <body>
@@ -118,7 +119,7 @@
         <div id="now-playing">Carregando roteiro...</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
-        <button class="btn-reset" onclick="resetarTudo()">Resetar Ordem e Notas</button>
+        <button class="btn-reset" onclick="resetarTudo()">Resetar Tudo (Ordem, Notas e Checks)</button>
     </div>
 
     <ul id="playlist-sortable"></ul>
@@ -126,15 +127,20 @@
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
 
-        // Carrega as notas salvas do LocalStorage
-        function getNotasSalvas() {
-            const notas = localStorage.getItem('minhas_notas_eta');
-            return notas ? JSON.parse(notas) : {};
+        // --- FUNÇÕES DE ARMAZENAMENTO LOCAL ---
+        function getStorage(chave) {
+            const data = localStorage.getItem(chave);
+            return data ? JSON.parse(data) : {};
         }
 
-        // Salva uma nota específica
+        function salvarCheck(id, status) {
+            const checks = getStorage('meus_checks_eta');
+            checks[id] = status;
+            localStorage.setItem('meus_checks_eta', JSON.stringify(checks));
+        }
+
         function salvarNota(id, texto) {
-            const notas = getNotasSalvas();
+            const notas = getStorage('minhas_notas_eta');
             notas[id] = texto;
             localStorage.setItem('minhas_notas_eta', JSON.stringify(notas));
         }
@@ -170,7 +176,9 @@
                     });
                 }
 
-                const notasLocais = getNotasSalvas();
+                const notasLocais = getStorage('minhas_notas_eta');
+                const checksLocais = getStorage('meus_checks_eta');
+                
                 const lista = document.getElementById('playlist-sortable');
                 lista.innerHTML = '';
                 document.getElementById('now-playing').innerText = "Selecione uma música";
@@ -180,20 +188,24 @@
                     li.className = 'glass-panel';
                     li.setAttribute('data-id', item.id);
                     
-                    // Prioriza a nota salva localmente, senão usa a da planilha
+                    const estaCheckado = checksLocais[item.id] === true;
+                    if (estaCheckado) li.classList.add('done');
+
                     const notaFinal = notasLocais[item.id] !== undefined ? notasLocais[item.id] : item.notasPlanilha;
 
                     li.innerHTML = `
                         <div class="li-main-row">
                             <div class="drag-handle">⋮⋮</div>
-                            <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
+                            <input type="checkbox" ${estaCheckado ? 'checked' : ''} 
+                                onchange="toggleDone(this, '${item.id}')">
                             <div class="song-info">
                                 <span class="interpreter">${item.cantor}</span>
                                 <span class="song-title">${item.musica}</span>
                             </div>
                             <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
                         </div>
-                        <div class="notes-field" contenteditable="true" oninput="salvarNota('${item.id}', this.innerText)">${notaFinal}</div>
+                        <div class="notes-field" contenteditable="true" 
+                            oninput="salvarNota('${item.id}', this.innerText)">${notaFinal}</div>
                     `;
                     lista.appendChild(li);
                 });
@@ -212,10 +224,20 @@
             }
         }
 
+        function toggleDone(checkbox, id) {
+            const li = checkbox.closest('li');
+            const isChecked = checkbox.checked;
+            if (isChecked) {
+                li.classList.add('done');
+            } else {
+                li.classList.remove('done');
+            }
+            salvarCheck(id, isChecked);
+        }
+
         function resetarTudo() {
-            if (confirm("Isso apagará sua ordem personalizada e TODAS as notas salvas no aparelho. Confirmar?")) {
-                localStorage.removeItem('minha_ordem_eta');
-                localStorage.removeItem('minhas_notas_eta');
+            if (confirm("Isso apagará a ordem, as notas e as marcações (checks) salvas. Confirmar?")) {
+                localStorage.clear();
                 window.location.reload();
             }
         }
