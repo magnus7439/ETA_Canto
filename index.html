@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETA - Roteiro Musical !-!</title>
+    <title>ETA - Roteiro Musical !*!</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -59,46 +60,32 @@
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
             } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista."; }
         }
-function tocar(tipo, media, cantor, musica) {
+
+        function tocar(tipo, media, cantor, musica) {
     const audio = document.getElementById('audio-player');
     const yt = document.getElementById('yt-player');
     const statusDisplay = document.getElementById('now-playing');
     
     statusDisplay.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
-    // Limpa estados anteriores
+    // Reseta os players para garantir que um pare quando o outro começar
     audio.pause();
     audio.src = "";
     yt.src = "";
-    yt.style.display = 'none';
     audio.style.display = 'none';
+    yt.style.display = 'none';
 
-    if (tipo === 'drive') {
+    if (tipo === 'drive' || tipo === 'dropbox') {
         audio.style.display = 'block';
-        
-        if (media.startsWith('http')) {
-            // Se for link do Dropbox
-            audio.src = media;
-        } else {
-            // Se for ID do Google Drive, usamos o redirecionador oficial de download
-            // Isso costuma funcionar melhor que o link 'open'
-            audio.src = `https://drive.google.com/uc?export=download&id=${media}`;
-        }
-        
+        // Se for link do Dropbox (começa com http), toca direto.
+        audio.src = media.startsWith('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
         audio.load();
-        
-        // Tenta tocar automaticamente
-        var playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Se o navegador ou o Google bloquear o autoplay:
-                statusDisplay.innerHTML += "<br><small style='color:black'>⚠️ O Google Drive exige que você clique no PLAY manualmente.</small>";
-            });
-        }
+        audio.play().catch(e => {
+            statusDisplay.innerHTML += "<br><small style='color:black'>⚠️ Clique no Play para iniciar</small>";
+        });
     } else if (tipo === 'youtube') {
-        audio.style.display = 'none';
         yt.style.display = 'block';
+        // Monta o link de embed usando o ID que você colocou no Gist
         yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
     }
 }
