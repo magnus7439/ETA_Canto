@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETA - Roteiro Musical teste</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .master-player { position: sticky; top: 10px; background: #1db954; color: #000; padding: 15px; border-radius: 15px; width: 90%; max-width: 600px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.8); text-align: center; }
+        #now-playing { font-weight: bold; margin-bottom: 10px; font-size: 1.1em; }
+        audio { width: 100%; border-radius: 30px; }
+        iframe { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 10px; }
+        ul { list-style: none; padding: 0; width: 100%; max-width: 700px; margin-top: 25px; }
+        li { background: #1e1e1e; margin: 10px 0; padding: 12px; border-radius: 10px; display: grid; grid-template-columns: 30px 40px 1fr 150px 50px; align-items: center; border: 1px solid #333; }
+        .drag-handle { cursor: grab; color: #555; font-size: 20px; }
+        .interpreter { color: #1db954; font-weight: bold; font-size: 0.75em; text-transform: uppercase; }
+        .song-title { font-size: 1em; color: #fff; display: block; }
+        .notes-field { background: #2a2a2a; border: 1px dashed #555; color: #ccc; font-size: 0.8em; padding: 5px; border-radius: 5px; margin: 0 10px; min-height: 20px; outline: none; }
+        .btn-play { background: #333; color: #1db954; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.1em; }
+        .done { opacity: 0.3; filter: grayscale(100%); }
+    </style>
+</head>
+<body>
+
+    <div class="master-player">
+        <div id="now-playing">Selecione uma faixa</div>
+        <audio id="audio-player" controls></audio>
+        <iframe id="yt-player"></iframe>
+    </div>
+
+    <ul id="playlist-sortable"></ul>
+
+    <script>
+        // Use o link do seu Gist aqui
+        const JSON_URL = https://gist.githubusercontent.com/magnus7439/66603363ef03af372c10cb3d22e38d45/raw/fa14dd0651b7f8e996afe5c1de0ccddf1ad67a24/dados.json';
+        
+        async function carregar() {
+            try {
+                const r = await fetch(JSON_URL);
+                const dados = await r.json();
+                const lista = document.getElementById('playlist-sortable');
+                lista.innerHTML = '';
+                dados.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="drag-handle">⋮⋮</div>
+                        <input type="checkbox" onchange="this.parentElement.classList.toggle('done')">
+                        <div style="margin-left:10px">
+                            <span class="interpreter">${item.cantor}</span>
+                            <span class="song-title">${item.musica}</span>
+                        </div>
+                        <div class="notes-field" contenteditable="true">${item.notes || ''}</div>
+                        <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
+                    `;
+                    lista.appendChild(li);
+                });
+                Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
+            } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista."; }
+        }
+
+        function tocar(tipo, media, cantor, musica) {
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            document.getElementById('now-playing').innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+
+            if (tipo === 'drive') {
+                yt.style.display = 'none';
+                audio.style.display = 'block';
+                // Se for link do Dropbox com raw=1 ou link direto, funciona instantaneamente
+                // Se ainda estiver usando o ID do Drive, ele tentará o método do docs.google
+                audio.src = media.includes('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
+                audio.load();
+                audio.play();
+            } else {
+                audio.pause();
+                audio.style.display = 'none';
+                yt.style.display = 'block';
+                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
+            }
+        }
+        carregar();
+    </script>
+</body>
+</html>
