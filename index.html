@@ -59,27 +59,21 @@
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
             } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista."; }
         }
+function tocar(tipo, media, cantor, musica) {
+    const audio = document.getElementById('audio-player');
+    const statusDisplay = document.getElementById('now-playing');
+    
+    statusDisplay.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
-        function tocar(tipo, media, cantor, musica) {
-            const audio = document.getElementById('audio-player');
-            const yt = document.getElementById('yt-player');
-            document.getElementById('now-playing').innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+    if (tipo === 'drive') {
+        audio.style.display = 'block';
+        // Se o link no JSON começar com http, ele usa direto (Dropbox)
+        audio.src = media.startsWith('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
+        audio.load();
+        audio.play();
+    }
+}
 
-            if (tipo === 'drive') {
-                yt.style.display = 'none';
-                audio.style.display = 'block';
-                // Se for link do Dropbox com raw=1 ou link direto, funciona instantaneamente
-                // Se ainda estiver usando o ID do Drive, ele tentará o método do docs.google
-                audio.src = media.includes('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
-                audio.load();
-                audio.play();
-            } else {
-                audio.pause();
-                audio.style.display = 'none';
-                yt.style.display = 'block';
-                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
-            }
-        }
         carregar();
     </script>
 </body>
