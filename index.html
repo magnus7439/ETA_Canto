@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical</title>
+    <title>ETA - Roteiro Musical de novo</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background-image: url('image_6.png'); 
+            background-image: url('image_abc43a.jpg'); /* Usando sua imagem de cortina */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -58,18 +58,19 @@
         audio { width: 100%; border-radius: 30px; }
         #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
 
-        /* BOTÃO DE RESET */
         .btn-reset {
             background: rgba(255, 255, 255, 0.1);
-            color: #ccc;
-            border: none;
+            color: #aaa;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 5px 15px;
             border-radius: 20px;
-            font-size: 0.7em;
+            font-size: 0.65em;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 12px;
             text-transform: uppercase;
+            transition: 0.3s;
         }
+        .btn-reset:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
 
         /* LISTA MOBILE FRIENDLY */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
@@ -77,7 +78,7 @@
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
         
         .drag-handle { cursor: grab; color: rgba(255,255,255,0.3); font-size: 22px; }
-        input[type="checkbox"] { transform: scale(1.4); }
+        input[type="checkbox"] { transform: scale(1.4); cursor: pointer; }
 
         .song-info { display: flex; flex-direction: column; overflow: hidden; }
         .interpreter { color: #1db954; font-weight: bold; font-size: 0.8em; text-transform: uppercase; }
@@ -114,7 +115,7 @@
 <body>
 
     <div class="master-player glass-panel">
-        <div id="now-playing">Carregando planilha...</div>
+        <div id="now-playing">Carregando roteiro...</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
         <button class="btn-reset" onclick="resetarOrdem()">Limpar Ordem Personalizada</button>
@@ -123,7 +124,6 @@
     <ul id="playlist-sortable"></ul>
 
     <script>
-        // CONEXÃO GOOGLE SHEETS
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
 
         async function carregar() {
@@ -132,25 +132,99 @@
                 const texto = await r.text();
                 
                 const linhas = texto.split('\n').map(l => l.trim()).filter(l => l);
-                let dados = linhas.slice(1).map(linha => {
+                let dados = linhas.slice(1).map((linha, index) => {
                     const cols = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     return {
-                        id: cols[0]?.replace(/"/g, ''),
-                        cantor: cols[1]?.replace(/"/g, ''),
-                        musica: cols[2]?.replace(/"/g, ''),
+                        id: cols[0]?.replace(/"/g, '') || ('item-' + index),
+                        cantor: cols[1]?.replace(/"/g, '') || 'Interprete',
+                        musica: cols[2]?.replace(/"/g, '') || 'Título',
                         media: cols[3]?.replace(/"/g, ''),
-                        tipo: cols[4]?.replace(/"/g, '').toLowerCase().trim(),
-                        notas: cols[5]?.replace(/"/g, '')
+                        tipo: (cols[4]?.replace(/"/g, '') || '').toLowerCase().trim(),
+                        notas: cols[5]?.replace(/"/g, '') || ''
                     };
-                }).filter(item => item.musica);
+                }).filter(item => item.musica && item.musica !== 'Musica');
 
                 // --- RECUPERAR ORDEM SALVA ---
-                const ordemSalva = localStorage.getItem('ordem_playlist');
+                const ordemSalva = localStorage.getItem('minha_ordem_eta');
                 if (ordemSalva) {
                     const idsOrdem = JSON.parse(ordemSalva);
-                    // Reorganiza os dados com base nos IDs salvos no navegador
                     dados.sort((a, b) => {
                         let indexA = idsOrdem.indexOf(a.id);
                         let indexB = idsOrdem.indexOf(b.id);
-                        // Se for um ID novo (não salvo), joga pro final
-                        if (indexA ===
+                        if (indexA === -1) indexA = 999;
+                        if (indexB === -1) indexB = 999;
+                        return indexA - indexB;
+                    });
+                }
+
+                const lista = document.getElementById('playlist-sortable');
+                lista.innerHTML = '';
+                document.getElementById('now-playing').innerText = "Selecione uma música";
+
+                dados.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'glass-panel';
+                    li.setAttribute('data-id', item.id);
+                    li.innerHTML = `
+                        <div class="li-main-row">
+                            <div class="drag-handle">⋮⋮</div>
+                            <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
+                            <div class="song-info">
+                                <span class="interpreter">${item.cantor}</span>
+                                <span class="song-title">${item.musica}</span>
+                            </div>
+                            <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
+                        </div>
+                        <div class="notes-field" contenteditable="true">${item.notas}</div>
+                    `;
+                    lista.appendChild(li);
+                });
+
+                Sortable.create(lista, { 
+                    handle: '.drag-handle', 
+                    animation: 150,
+                    onEnd: function () {
+                        const novaOrdem = Array.from(lista.querySelectorAll('li')).map(el => el.getAttribute('data-id'));
+                        localStorage.setItem('minha_ordem_eta', JSON.stringify(novaOrdem));
+                    }
+                });
+
+            } catch (e) { 
+                document.getElementById('now-playing').innerText = "Erro ao carregar a planilha.";
+            }
+        }
+
+        function resetarOrdem() {
+            if (confirm("Deseja voltar para a ordem original da planilha?")) {
+                localStorage.removeItem('minha_ordem_eta');
+                window.location.reload();
+            }
+        }
+
+        function tocar(tipo, media, cantor, musica) {
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            const status = document.getElementById('now-playing');
+            
+            status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+            audio.pause(); audio.src = ""; yt.src = "";
+            audio.style.display = 'none'; yt.style.display = 'none';
+
+            if (tipo === 'drive' || tipo === 'dropbox') {
+                audio.style.display = 'block';
+                // Lógica para links diretos ou Drive
+                audio.src = media.includes('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
+                audio.load();
+                audio.play().catch(() => {
+                    status.innerHTML += "<br><small style='color:black'>⚠️ Clique no Play para iniciar</small>";
+                });
+            } else if (tipo === 'youtube') {
+                yt.style.display = 'block';
+                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
+            }
+        }
+
+        carregar();
+    </script>
+</body>
+</html>
