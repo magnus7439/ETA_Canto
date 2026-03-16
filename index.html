@@ -61,16 +61,30 @@
         }
 function tocar(tipo, media, cantor, musica) {
     const audio = document.getElementById('audio-player');
+    const yt = document.getElementById('yt-player');
     const statusDisplay = document.getElementById('now-playing');
     
     statusDisplay.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
     if (tipo === 'drive') {
+        // Modo Áudio: Esconde o YouTube e limpa o vídeo anterior
+        yt.style.display = 'none';
+        yt.src = ''; 
+        
         audio.style.display = 'block';
-        // Se o link no JSON começar com http, ele usa direto (Dropbox)
+        // Se o link no JSON começar com http, ele usa direto (Dropbox). 
+        // Se for só o ID, usa o link do Google Drive.
         audio.src = media.startsWith('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
         audio.load();
         audio.play();
+    } else if (tipo === 'youtube') {
+        // Modo YouTube: Para o áudio e esconde o player de áudio
+        audio.pause();
+        audio.style.display = 'none';
+        
+        // Mostra o vídeo e carrega o link de embed do YouTube
+        yt.style.display = 'block';
+        yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
     }
 }
 
