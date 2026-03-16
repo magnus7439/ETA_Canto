@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical</title>
+    <title>ETA - Aulas de Canto</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -72,7 +72,7 @@
         }
         .btn-reset:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
 
-        /* LISTA MOBILE FRIENDLY */
+        /* LISTA MELHOR PRA CELULAR */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; transition: opacity 0.3s; }
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
@@ -119,7 +119,7 @@
         <div id="now-playing">Carregando roteiro...</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
-        <button class="btn-reset" onclick="resetarTudo()">Resetar Tudo (Ordem, Notas e Checks)</button>
+        <button class="btn-reset" onclick="resetarTudo()">Reseta o trem todo (Ordem, Notas e Checks)</button>
     </div>
 
     <ul id="playlist-sortable"></ul>
@@ -236,7 +236,7 @@
         }
 
         function resetarTudo() {
-            if (confirm("Isso apagará a ordem, as notas e as marcações (checks) salvas. Confirmar?")) {
+            if (confirm("Quer apagar o trem todo mesmo? mas são só as marcações e ordem, hehehe")) {
                 localStorage.clear();
                 window.location.reload();
             }
