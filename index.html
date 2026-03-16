@@ -2,94 +2,283 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETA - Roteiro Musical !*!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ETA - CANTO Domingo à Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .master-player { position: sticky; top: 10px; background: #1db954; color: #000; padding: 15px; border-radius: 15px; width: 90%; max-width: 600px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.8); text-align: center; }
-        #now-playing { font-weight: bold; margin-bottom: 10px; font-size: 1.1em; }
-        audio { width: 100%; border-radius: 30px; }
-        iframe { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 10px; }
-        ul { list-style: none; padding: 0; width: 100%; max-width: 700px; margin-top: 25px; }
-        li { background: #1e1e1e; margin: 10px 0; padding: 12px; border-radius: 10px; display: grid; grid-template-columns: 30px 40px 1fr 150px 50px; align-items: center; border: 1px solid #333; }
-        .drag-handle { cursor: grab; color: #555; font-size: 20px; }
-        .interpreter { color: #1db954; font-weight: bold; font-size: 0.75em; text-transform: uppercase; }
-        .song-title { font-size: 1em; color: #fff; display: block; }
-        .notes-field { background: #2a2a2a; border: 1px dashed #555; color: #ccc; font-size: 0.8em; padding: 5px; border-radius: 5px; margin: 0 10px; min-height: 20px; outline: none; }
-        .btn-play { background: #333; color: #1db954; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.1em; }
-        .done { opacity: 0.3; filter: grayscale(100%); }
+        /* Configuração do Fundo com a Textura Roxa */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 10px; /* Reduzido para celular */
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* Adiciona a imagem de fundo */
+            background-image: url('image_6.png'); /* Certifique-se que o nome do arquivo está correto */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; /* O fundo fica fixo ao rolar a página */
+        }
+
+        /* Efeito de Vidro (Glassmorphism) para os containers */
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.7); /* Fundo escuro semi-transparente */
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px); /* Efeito de desfoque no fundo */
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        /* Player Principal Otimizado */
+        .master-player {
+            position: sticky;
+            top: 10px;
+            width: 95%;
+            max-width: 600px;
+            padding: 15px;
+            z-index: 100;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Ajuste do Título "Tocando" para Celular */
+        #now-playing {
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 1.2em; /* Fonte maior */
+            min-height: 50px; /* Mais espaço vertical */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #now-playing small {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* Player de Áudio Nativo */
+        audio {
+            width: 100%;
+            border-radius: 30px;
+            outline: none;
+        }
+        /* Customizando cores do player nativo (em browsers compatíveis) */
+        audio::-webkit-media-controls-panel { background-color: rgba(255,255,255,0.9); }
+        audio::-webkit-media-controls-current-time-display,
+        audio::-webkit-media-controls-time-remaining-display { color: #333; }
+
+        /* Container do YouTube */
+        #yt-player {
+            display: none;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 10px;
+            border: none;
+            margin-top: 15px;
+        }
+
+        /* Lista de Músicas Otimizada para Celular */
+        ul {
+            list-style: none;
+            padding: 0;
+            width: 95%;
+            max-width: 700px;
+            margin: 0;
+        }
+
+        /* Item da Lista (Li) - Estrutura Empilhada para Celular */
+        li {
+            margin: 12px 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column; /* Elementos empilhados verticalmente */
+            gap: 12px; /* Espaço entre as linhas do item */
+            align-items: stretch;
+        }
+
+        /* Primeira Linha do Item (Controles e Info) */
+        .li-main-row {
+            display: grid;
+            grid-template-columns: 40px 40px 1fr 50px; /* Larguras fixas para controles */
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Segunda Linha do Item (Notas) */
+        .li-notes-row {
+            width: 100%;
+        }
+
+        /* Controles da Lista */
+        .drag-handle {
+            cursor: grab;
+            color: rgba(255,255,255,0.4);
+            font-size: 24px;
+            text-align: center;
+            padding: 5px; /* Maior área de toque */
+        }
+        
+        /* Checkbox maior para celular */
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Informações da Música */
+        .song-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Evita quebra de layout com nomes longos */
+        }
+        .interpreter {
+            color: #1db954; /* Verde Spotify */
+            font-weight: bold;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .song-title {
+            font-size: 1.1em;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Adiciona "..." em nomes longos */
+        }
+
+        /* Campo de Notas Otimizado */
+        .notes-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: #ccc;
+            font-size: 0.9em;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 25px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box; /* Garante padding correto */
+        }
+        .notes-field:focus {
+            border-color: #1db954;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Botão Play Maior e mais Tátil */
+        .btn-play {
+            background: rgba(255, 255, 255, 0.1);
+            color: #1db954;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 50px; /* Aumentado para celular */
+            height: 50px; /* Aumentado para celular */
+            cursor: pointer;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent; /* Remove destaque de toque no mobile */
+        }
+        .btn-play:active {
+            background: rgba(29, 185, 84, 0.2);
+            transform: scale(0.95);
+        }
+
+        /* Estilo para item marcado como concluído */
+        .done {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        .done .notes-field {
+            text-decoration: line-through;
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="master-player">
+    <div class="master-player glass-panel">
         <div id="now-playing">Selecione uma faixa</div>
         <audio id="audio-player" controls></audio>
-        <iframe id="yt-player"></iframe>
+        <iframe id="yt-player" allow="autoplay"></iframe>
     </div>
 
     <ul id="playlist-sortable"></ul>
 
     <script>
-        // Use o link do seu Gist aqui
-        // const JSON_URL = https://gist.githubusercontent.com/magnus7439/66603363ef03af372c10cb3d22e38d45/raw/fa14dd0651b7f8e996afe5c1de0ccddf1ad67a24/dados.json';
-        const JSON_URL = 'https://gist.githubusercontent.com/magnus7439/66603363ef03af372c10cb3d22e38d45/raw/dados.json'; 
-      
+        // URL do seu Gist com a versão mais recente
+        const JSON_URL = 'https://gist.githubusercontent.com/magnus7439/66603363ef03af372c10cb3d22e38d45/raw/dados.json';
+        
         async function carregar() {
             try {
-                const r = await fetch(JSON_URL);
+                // Adiciona um timestamp para evitar cache do Gist
+                const r = await fetch(JSON_URL + '?t=' + new Date().getTime());
                 const dados = await r.json();
                 const lista = document.getElementById('playlist-sortable');
                 lista.innerHTML = '';
                 dados.forEach(item => {
                     const li = document.createElement('li');
+                    li.className = 'glass-panel'; // Aplica efeito de vidro nos itens
+                    
+                    // Estrutura interna modificada para melhor layout mobile
                     li.innerHTML = `
-                        <div class="drag-handle">⋮⋮</div>
-                        <input type="checkbox" onchange="this.parentElement.classList.toggle('done')">
-                        <div style="margin-left:10px">
-                            <span class="interpreter">${item.cantor}</span>
-                            <span class="song-title">${item.musica}</span>
+                        <div class="li-main-row">
+                            <div class="drag-handle">⋮⋮</div>
+                            <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
+                            <div class="song-info">
+                                <span class="interpreter">${item.cantor}</span>
+                                <span class="song-title">${item.musica}</span>
+                            </div>
+                            <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
                         </div>
-                        <div class="notes-field" contenteditable="true">${item.notes || ''}</div>
-                        <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
+                        <div class="li-notes-row">
+                            <div class="notes-field" contenteditable="true" placeholder="Notas...">${item.notas || ''}</div>
+                        </div>
                     `;
                     lista.appendChild(li);
                 });
+                // Ativa a funcionalidade de arrastar
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
-            } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista."; }
+            } catch (e) { document.getElementById('now-playing').innerText = "Erro ao carregar lista de músicas."; }
         }
 
         function tocar(tipo, media, cantor, musica) {
-    const audio = document.getElementById('audio-player');
-    const yt = document.getElementById('yt-player');
-    const statusDisplay = document.getElementById('now-playing');
-    
-    statusDisplay.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            const status = document.getElementById('now-playing');
+            
+            status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
 
-    // Reseta os players para garantir que um pare quando o outro começar
-    audio.pause();
-    audio.src = "";
-    yt.src = "";
-    audio.style.display = 'none';
-    yt.style.display = 'none';
+            // Reseta e esconde ambos os players antes de iniciar o novo
+            audio.pause();
+            audio.src = "";
+            yt.src = "";
+            audio.style.display = 'none';
+            yt.style.display = 'none';
 
-    if (tipo === 'drive' || tipo === 'dropbox') {
-        audio.style.display = 'block';
-        // Se for link do Dropbox (começa com http), toca direto.
-        audio.src = media.startsWith('http') ? media : `https://docs.google.com/uc?export=open&id=${media}`;
-        audio.load();
-        audio.play().catch(e => {
-            statusDisplay.innerHTML += "<br><small style='color:black'>⚠️ Clique no Play para iniciar</small>";
-        });
-    } else if (tipo === 'youtube') {
-        yt.style.display = 'block';
-        // Monta o link de embed usando o ID que você colocou no Gist
-        yt.src = `https://www.youtube.com/embed/${media}?autoplay=1`;
-    }
-}
-
+            if (tipo === 'dropbox' || tipo === 'drive') {
+                audio.style.display = 'block';
+                // O link no JSON já deve estar com &raw=1 para Dropbox
+                audio.src = media; 
+                audio.load();
+                // Tenta autoplay, browsers modernos podem bloquear sem interação prévia
+                audio.play().catch(e => console.log("Autoplay de áudio bloqueado"));
+            } else if (tipo === 'youtube') {
+                yt.style.display = 'block';
+                // Carrega o vídeo do YouTube com autoplay
+                yt.src = `https://www.youtube.com/embed/${media}?autoplay=1&modestbranding=1&rel=0`;
+            }
+        }
+        
+        // Inicia o carregamento da lista
         carregar();
     </script>
 </body>
