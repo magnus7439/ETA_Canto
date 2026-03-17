@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical</title>
+    <title>ETA - Roteiro Musical Ajustado</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -24,31 +24,18 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
-        /* PLAYER */
         .master-player {
             position: sticky; top: 10px; width: 95%; max-width: 600px;
             padding: 15px; z-index: 100; text-align: center; margin-bottom: 20px;
-            transition: all 0.4s ease;
         }
 
-        .player-minimized #yt-player, .player-minimized audio { display: none !important; }
-        
         #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; min-height: 30px; }
         audio { width: 100%; border-radius: 30px; margin-top: 10px; }
         #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
 
-        .close-player {
-            position: absolute; top: 8px; right: 12px;
-            background: rgba(255,255,255,0.1); border: none; color: #fff;
-            border-radius: 50%; width: 28px; height: 28px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* LISTA */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
-        /* 1. CORREÇÃO: ESTILO DO SEPARADOR */
         li.is-separator { 
             background: rgba(100, 50, 150, 0.6) !important; 
             border: 1px solid rgba(255, 255, 255, 0.5); 
@@ -56,7 +43,6 @@
         }
         .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
-        /* 2. CORREÇÃO: ITEM OCULTO (ADMIN) */
         li.is-hidden-mode { border: 1px dashed #1db954; background: rgba(29, 185, 84, 0.15); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
@@ -69,6 +55,7 @@
         .btn-play {
             background: rgba(255, 255, 255, 0.1); color: #1db954; border: none;
             border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 1.3em;
+            display: flex; align-items: center; justify-content: center;
         }
         
         .notes-field {
@@ -76,12 +63,12 @@
             color: #ccc; font-size: 0.9em; padding: 8px; border-radius: 8px; min-height: 20px; outline: none;
         }
         .done { opacity: 0.3; filter: grayscale(100%); }
+        .no-btn { width: 48px; height: 48px; }
     </style>
 </head>
 <body>
 
-    <div id="main-player-container" class="master-player glass-panel player-minimized">
-        <button class="close-player" id="btn-close" onclick="togglePlayer()" style="display:none">▼</button>
+    <div id="main-player-container" class="master-player glass-panel">
         <div id="now-playing">Selecione uma faixa</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
@@ -92,12 +79,6 @@
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
         const SENHA_MESTRA = "123";
-
-        function togglePlayer() {
-            const container = document.getElementById('main-player-container');
-            container.classList.toggle('player-minimized');
-            document.getElementById('btn-close').innerText = container.classList.contains('player-minimized') ? '▼' : '✕';
-        }
 
         async function carregar() {
             try {
@@ -119,7 +100,6 @@
                         notas: cols[5]?.replace(/"/g, '') || ''
                     };
                 }).filter(item => {
-                    // 2. CORREÇÃO: RESPEITAR ITEM OCULTO
                     if (item.tipo === 'oculto' && !acessoAdmin) return false;
                     return item.musica;
                 });
@@ -131,12 +111,16 @@
                     const li = document.createElement('li');
                     li.className = 'glass-panel';
                     
-                    // 1. CORREÇÃO: FORMATO DO SEPARADOR
                     if (item.tipo === 'separador') {
                         li.classList.add('is-separator');
                         li.innerHTML = `<div class="separator-title">${item.musica}</div>`;
                     } else {
                         if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
+                        
+                        // CORREÇÃO: Só mostra botão se o tipo for conhecido ou oculto
+                        const tiposValidos = ['youtube', 'drive', 'dropbox', 'oculto'];
+                        const temBotao = tiposValidos.includes(item.tipo);
+
                         li.innerHTML = `
                             <div class="li-main-row">
                                 <div class="drag-handle">⋮⋮</div>
@@ -145,7 +129,7 @@
                                     <span class="interpreter">${item.cantor}</span>
                                     <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '🔒' : ''}</span>
                                 </div>
-                                <button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>
+                                ${temBotao ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
                             </div>
                             <div class="notes-field" contenteditable="true">${item.notas}</div>
                         `;
@@ -158,22 +142,16 @@
         }
 
         function tocar(tipo, media, cantor, musica) {
-            const container = document.getElementById('main-player-container');
             const audio = document.getElementById('audio-player');
             const yt = document.getElementById('yt-player');
             const status = document.getElementById('now-playing');
-            const btnClose = document.getElementById('btn-close');
-
-            container.classList.remove('player-minimized');
-            btnClose.style.display = 'flex';
-            btnClose.innerText = '✕';
-
+            
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
             audio.pause(); audio.src = ""; yt.src = "";
             audio.style.display = 'none'; yt.style.display = 'none';
 
-            // 3. CORREÇÃO: LÓGICA YOUTUBE MELHORADA
-            const ehYouTube = tipo === 'youtube' || media.includes('youtube.com') || media.includes('youtu.be');
+            // Identifica se é YouTube pelo link ou pelo tipo
+            const ehYouTube = tipo === 'youtube' || media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
 
             if (ehYouTube) {
                 yt.style.display = 'block';
@@ -181,14 +159,13 @@
                 if (media.includes('v=')) ytID = media.split('v=')[1].split('&')[0];
                 else if (media.includes('be/')) ytID = media.split('be/')[1].split('?')[0];
                 else ytID = media;
-                
                 yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
             } else {
                 audio.style.display = 'block';
                 let url = media;
                 if (url.includes('dropbox.com')) {
                     url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
-                } else if (!url.includes('http')) {
+                } else if (!url.includes('http') && url.length > 15) {
                     url = `https://docs.google.com/uc?export=open&id=${url}`;
                 }
                 audio.src = url;
