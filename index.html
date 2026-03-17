@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical Ajustado</title>
+    <title>ETA - Roteiro Musical</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -24,25 +24,37 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
+        /* PLAYER COM REDIMENSIONAMENTO */
         .master-player {
             position: sticky; top: 10px; width: 95%; max-width: 600px;
             padding: 15px; z-index: 100; text-align: center; margin-bottom: 20px;
+            overflow: auto; resize: vertical; min-height: 60px;
+            transition: background 0.3s;
         }
 
-        #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; min-height: 30px; }
+        /* Estado Minimizado */
+        .player-minimized #yt-player, .player-minimized audio { display: none !important; }
+        .player-minimized { resize: none; min-height: 40px; }
+        
+        #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; padding-right: 30px; }
         audio { width: 100%; border-radius: 30px; margin-top: 10px; }
         #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
+
+        .toggle-player {
+            position: absolute; top: 10px; right: 15px;
+            background: rgba(255,255,255,0.1); border: none; color: #fff;
+            border-radius: 50%; width: 30px; height: 30px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
 
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
         li.is-separator { 
             background: rgba(100, 50, 150, 0.6) !important; 
-            border: 1px solid rgba(255, 255, 255, 0.5); 
-            text-align: center; 
+            border: 1px solid rgba(255, 255, 255, 0.5); text-align: center; 
         }
         .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-
         li.is-hidden-mode { border: 1px dashed #1db954; background: rgba(29, 185, 84, 0.15); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
@@ -58,18 +70,15 @@
             display: flex; align-items: center; justify-content: center;
         }
         
-        .notes-field {
-            background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.2);
-            color: #ccc; font-size: 0.9em; padding: 8px; border-radius: 8px; min-height: 20px; outline: none;
-        }
-        .done { opacity: 0.3; filter: grayscale(100%); }
         .no-btn { width: 48px; height: 48px; }
+        .done { opacity: 0.3; filter: grayscale(100%); }
     </style>
 </head>
 <body>
 
-    <div id="main-player-container" class="master-player glass-panel">
-        <div id="now-playing">Selecione uma faixa</div>
+    <div id="main-player-container" class="master-player glass-panel player-minimized">
+        <button class="toggle-player" id="btn-toggle" onclick="togglePlayer()">▼</button>
+        <div id="now-playing">Selecione uma música</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
     </div>
@@ -79,6 +88,13 @@
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
         const SENHA_MESTRA = "123";
+
+        function togglePlayer() {
+            const container = document.getElementById('main-player-container');
+            const btn = document.getElementById('btn-toggle');
+            const isMin = container.classList.toggle('player-minimized');
+            btn.innerText = isMin ? '▼' : '✕';
+        }
 
         async function carregar() {
             try {
@@ -117,9 +133,9 @@
                     } else {
                         if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
                         
-                        // CORREÇÃO: Só mostra botão se o tipo for conhecido ou oculto
-                        const tiposValidos = ['youtube', 'drive', 'dropbox', 'oculto'];
-                        const temBotao = tiposValidos.includes(item.tipo);
+                        // Validação de botão de Play
+                        const tiposPlay = ['youtube', 'drive', 'dropbox', 'oculto'];
+                        const temMidia = tiposPlay.includes(item.tipo) && item.media.length > 5;
 
                         li.innerHTML = `
                             <div class="li-main-row">
@@ -129,7 +145,7 @@
                                     <span class="interpreter">${item.cantor}</span>
                                     <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '🔒' : ''}</span>
                                 </div>
-                                ${temBotao ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
+                                ${temMidia ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
                             </div>
                             <div class="notes-field" contenteditable="true">${item.notas}</div>
                         `;
@@ -142,32 +158,31 @@
         }
 
         function tocar(tipo, media, cantor, musica) {
+            const container = document.getElementById('main-player-container');
             const audio = document.getElementById('audio-player');
             const yt = document.getElementById('yt-player');
+            const btn = document.getElementById('btn-toggle');
             const status = document.getElementById('now-playing');
             
+            // Abre o player automaticamente ao dar play
+            container.classList.remove('player-minimized');
+            btn.innerText = '✕';
+
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
             audio.pause(); audio.src = ""; yt.src = "";
             audio.style.display = 'none'; yt.style.display = 'none';
 
-            // Identifica se é YouTube pelo link ou pelo tipo
-            const ehYouTube = tipo === 'youtube' || media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
+            const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
 
-            if (ehYouTube) {
+            if (tipo === 'youtube' || ehYouTube) {
                 yt.style.display = 'block';
-                let ytID = "";
-                if (media.includes('v=')) ytID = media.split('v=')[1].split('&')[0];
-                else if (media.includes('be/')) ytID = media.split('be/')[1].split('?')[0];
-                else ytID = media;
+                let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
                 yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
             } else {
                 audio.style.display = 'block';
                 let url = media;
-                if (url.includes('dropbox.com')) {
-                    url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
-                } else if (!url.includes('http') && url.length > 15) {
-                    url = `https://docs.google.com/uc?export=open&id=${url}`;
-                }
+                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
                 audio.src = url;
                 audio.load(); audio.play();
             }
