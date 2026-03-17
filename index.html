@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical</title>
+    <title>ETA - Roteiro Musical Profissional</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -24,29 +24,32 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
-        /* PLAYER COM REDIMENSIONAMENTO */
+        /* PLAYER DINÂMICO E REDIMENSIONÁVEL */
         .master-player {
             position: sticky; top: 10px; width: 95%; max-width: 600px;
             padding: 15px; z-index: 100; text-align: center; margin-bottom: 20px;
-            overflow: auto; resize: vertical; min-height: 60px;
-            transition: background 0.3s;
+            overflow: auto; resize: vertical; min-height: 40px;
+            transition: all 0.3s ease;
         }
 
-        /* Estado Minimizado */
+        /* Estado quando o player está encolhido */
         .player-minimized #yt-player, .player-minimized audio { display: none !important; }
-        .player-minimized { resize: none; min-height: 40px; }
+        .player-minimized { resize: none; min-height: 40px; padding-bottom: 10px; }
         
-        #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; padding-right: 30px; }
+        #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; padding-right: 35px; }
         audio { width: 100%; border-radius: 30px; margin-top: 10px; }
         #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
 
+        /* BOTÃO DE FECHAR / ABRIR */
         .toggle-player {
-            position: absolute; top: 10px; right: 15px;
+            position: absolute; top: 12px; right: 15px;
             background: rgba(255,255,255,0.1); border: none; color: #fff;
             border-radius: 50%; width: 30px; height: 30px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; font-weight: bold;
+            z-index: 101;
         }
 
+        /* LISTA */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
@@ -55,6 +58,8 @@
             border: 1px solid rgba(255, 255, 255, 0.5); text-align: center; 
         }
         .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Estilo para o item que só o Admin vê */
         li.is-hidden-mode { border: 1px dashed #1db954; background: rgba(29, 185, 84, 0.15); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
@@ -72,6 +77,11 @@
         
         .no-btn { width: 48px; height: 48px; }
         .done { opacity: 0.3; filter: grayscale(100%); }
+        
+        .notes-field {
+            background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: #ccc; font-size: 0.9em; padding: 8px; border-radius: 8px; min-height: 20px; outline: none;
+        }
     </style>
 </head>
 <body>
@@ -89,6 +99,7 @@
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYeviC8wnSv0ZYI2X5Lk5MxQIOBGA4BpNu88eSwh65EH_jPV_uNj1CF09ZFR2RLoc9n8sjKdcQA04w/pub?output=csv';
         const SENHA_MESTRA = "123";
 
+        // Função para abrir/fechar o player
         function togglePlayer() {
             const container = document.getElementById('main-player-container');
             const btn = document.getElementById('btn-toggle');
@@ -116,6 +127,7 @@
                         notas: cols[5]?.replace(/"/g, '') || ''
                     };
                 }).filter(item => {
+                    // Lógica de Privacidade: Se for oculto, só mostra se tiver a senha na URL
                     if (item.tipo === 'oculto' && !acessoAdmin) return false;
                     return item.musica;
                 });
@@ -133,7 +145,7 @@
                     } else {
                         if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
                         
-                        // Validação de botão de Play
+                        // Só mostra o play se o tipo for conhecido
                         const tiposPlay = ['youtube', 'drive', 'dropbox', 'oculto'];
                         const temMidia = tiposPlay.includes(item.tipo) && item.media.length > 5;
 
@@ -164,7 +176,7 @@
             const btn = document.getElementById('btn-toggle');
             const status = document.getElementById('now-playing');
             
-            // Abre o player automaticamente ao dar play
+            // LÓGICA DINÂMICA: Abre o player automaticamente ao clicar em qualquer Play (inclusive ocultos)
             container.classList.remove('player-minimized');
             btn.innerText = '✕';
 
@@ -172,17 +184,21 @@
             audio.pause(); audio.src = ""; yt.src = "";
             audio.style.display = 'none'; yt.style.display = 'none';
 
-            const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
+            // Detecta se o link é do YouTube mesmo se o tipo for "oculto"
+            const ehYouTube = tipo === 'youtube' || media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
 
-            if (tipo === 'youtube' || ehYouTube) {
+            if (ehYouTube) {
                 yt.style.display = 'block';
                 let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
                 yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
             } else {
                 audio.style.display = 'block';
                 let url = media;
+                // Tratamento para Dropbox
                 if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+                // Tratamento para Drive (ID puro)
                 else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
+                
                 audio.src = url;
                 audio.load(); audio.play();
             }
