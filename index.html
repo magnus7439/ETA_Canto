@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical Oficial</title>
+    <title>ETA - Canto Domingo </title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -159,7 +159,7 @@
                                 <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
                                 <div class="song-info">
                                     <span class="interpreter">${item.cantor}</span>
-                                    <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '🔒' : ''}</span>
+                                    <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '👀' : ''}</span>
                                 </div>
                                 ${temMidia ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
                             </div>
