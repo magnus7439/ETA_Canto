@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Roteiro Musical Oficial 2</title>
+    <title>ETA - Roteiro Musical Oficial</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -24,7 +24,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
-        /* PLAYER REDIMENSIONÁVEL E DINÂMICO */
+        /* PLAYER REDIMENSIONÁVEL */
         .master-player {
             position: sticky; top: 10px; width: 95%; max-width: 600px;
             padding: 15px; z-index: 100; text-align: center; margin-bottom: 20px;
@@ -50,15 +50,23 @@
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
+        /* Estilo do Separador */
         li.is-separator { 
             background: rgba(100, 50, 150, 0.6) !important; 
-            border: 1px solid rgba(255, 255, 255, 0.5); text-align: center; 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
         }
-        .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .separator-content { 
+            display: grid; grid-template-columns: 35px 1fr; align-items: center; 
+        }
+        .separator-title { 
+            font-size: 1.2em; font-weight: bold; text-transform: uppercase; 
+            letter-spacing: 2px; text-align: center; width: 100%;
+        }
+
         li.is-hidden-mode { border: 1px dashed #1db954; background: rgba(29, 185, 84, 0.15); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
-        .drag-handle { cursor: grab; color: rgba(255,255,255,0.3); font-size: 22px; }
+        .drag-handle { cursor: grab; color: rgba(255,255,255,0.4); font-size: 22px; }
         
         .song-info { display: flex; flex-direction: column; overflow: hidden; }
         .interpreter { color: #1db954; font-weight: bold; font-size: 0.8em; text-transform: uppercase; }
@@ -132,7 +140,13 @@
                     
                     if (item.tipo === 'separador') {
                         li.classList.add('is-separator');
-                        li.innerHTML = `<div class="separator-title">${item.musica}</div>`;
+                        // CORREÇÃO: Adicionado drag-handle ao separador para permitir movimento
+                        li.innerHTML = `
+                            <div class="separator-content">
+                                <div class="drag-handle">⋮⋮</div>
+                                <div class="separator-title">${item.musica}</div>
+                            </div>
+                        `;
                     } else {
                         if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
                         
@@ -166,7 +180,6 @@
             const btn = document.getElementById('btn-toggle');
             const status = document.getElementById('now-playing');
             
-            // Força o player a abrir ao clicar em tocar
             container.classList.remove('player-minimized');
             btn.innerText = '✕';
 
