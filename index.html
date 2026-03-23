@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo 13:30</title>
+    <title>ETA - Canto Domingo a Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -69,7 +69,7 @@
         }
 
         /* LISTA */
-        ul { list-style: none; padding: 0; width: 95%; max-width: 700px; min-height: 50px; }
+        ul { list-style: none; padding: 0; width: 95%; max-width: 700px; min-height: 100px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
         li.is-separator { background: rgba(100, 50, 150, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.5); }
@@ -146,11 +146,11 @@
 
             itens.forEach(item => {
                 if (item.classList.contains('is-separator')) {
-                    item.style.display = termoBusca === "" ? "block" : "none";
-                    return;
+                    item.style.display = (termoBusca === "") ? "block" : "none";
+                } else {
+                    const textoItem = item.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    item.style.display = textoItem.includes(termoBusca) ? "flex" : "none";
                 }
-                const textoItem = item.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                item.style.display = textoItem.includes(termoBusca) ? "flex" : "none";
             });
         }
 
@@ -174,7 +174,6 @@
                         notas: cols[5]?.replace(/"/g, '') || ''
                     };
                 }).filter(item => {
-                    // Se o item é oculto e não é admin, não carrega no HTML
                     if (item.tipo === 'oculto' && !acessoAdmin) return false;
                     return item.musica;
                 });
@@ -212,9 +211,11 @@
 
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
                 
-                // Força a exibição inicial dos itens carregados
-                const todosLIs = lista.querySelectorAll('li');
-                todosLIs.forEach(li => li.style.display = li.classList.contains('is-separator') ? "block" : "flex");
+                // IMPORTANTE: Garantir visibilidade sem rodar o filtro de busca
+                const itensCriados = lista.querySelectorAll('li');
+                itensCriados.forEach(li => {
+                    li.style.display = li.classList.contains('is-separator') ? 'block' : 'flex';
+                });
 
             } catch (e) { console.error(e); }
         }
@@ -230,3 +231,26 @@
             btn.innerText = '✕';
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
             audio.pause(); audio.src = ""; yt.src = "";
+            audio.style.display = 'none'; yt.style.display = 'none';
+
+            const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
+
+            if (tipo === 'youtube' || ehYouTube) {
+                yt.style.display = 'block';
+                let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
+                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
+            } else {
+                audio.style.display = 'block';
+                let url = media;
+                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
+                audio.src = url;
+                audio.load(); audio.play();
+            }
+        }
+
+        // Carregar ao iniciar
+        window.addEventListener('DOMContentLoaded', carregar);
+    </script>
+</body>
+</html>
