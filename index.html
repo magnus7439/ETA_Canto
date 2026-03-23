@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo</title>
+    <title>ETA - Canto Domingo 13:30</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -69,14 +69,13 @@
         }
 
         /* LISTA */
-        ul { list-style: none; padding: 0; width: 95%; max-width: 700px; }
+        ul { list-style: none; padding: 0; width: 95%; max-width: 700px; min-height: 50px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
         li.is-separator { background: rgba(100, 50, 150, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.5); }
         .separator-content { display: grid; grid-template-columns: 35px 1fr; align-items: center; }
         .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-align: center; width: 100%; }
 
-        /* Estilo para itens ocultos no modo Admin */
         li.is-hidden-mode { border: 1px solid #ff4; background: rgba(255, 255, 68, 0.05); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
@@ -110,7 +109,7 @@
     </div>
 
     <div class="search-container">
-        <input type="text" id="search-input" placeholder="🔍 Buscar música ou intérprete..." onkeyup="filtrarLista()">
+        <input type="text" id="search-input" placeholder="🔍 Buscar música ou intérprete..." oninput="filtrarLista()">
         <button class="clear-search" id="btn-clear" onclick="limparBusca()">✕</button>
     </div>
 
@@ -137,24 +136,19 @@
         function filtrarLista() {
             const input = document.getElementById('search-input');
             const btnClear = document.getElementById('btn-clear');
+            if(!input || !btnClear) return;
+
             const termoOriginal = input.value;
-            
-            // Controle do botão de limpar
-            if (btnClear) {
-                btnClear.style.display = termoOriginal.length > 0 ? "block" : "none";
-            }
+            btnClear.style.display = termoOriginal.length > 0 ? "block" : "none";
 
             const termoBusca = termoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             const itens = document.querySelectorAll('#playlist-sortable li');
 
             itens.forEach(item => {
-                // Separadores aparecem apenas se a busca estiver vazia
                 if (item.classList.contains('is-separator')) {
                     item.style.display = termoBusca === "" ? "block" : "none";
                     return;
                 }
-                
-                // Busca no texto do item (Cantor e Música)
                 const textoItem = item.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
                 item.style.display = textoItem.includes(termoBusca) ? "flex" : "none";
             });
@@ -175,4 +169,64 @@
                         id: cols[0]?.replace(/"/g, '') || ('m'+index),
                         cantor: cols[1]?.replace(/"/g, '') || '',
                         musica: cols[2]?.replace(/"/g, '') || '',
-                        media: cols[3]?.replace(/"/g,
+                        media: cols[3]?.replace(/"/g, '').trim() || '',
+                        tipo: (cols[4]?.replace(/"/g, '') || '').toLowerCase().trim(),
+                        notas: cols[5]?.replace(/"/g, '') || ''
+                    };
+                }).filter(item => {
+                    // Se o item é oculto e não é admin, não carrega no HTML
+                    if (item.tipo === 'oculto' && !acessoAdmin) return false;
+                    return item.musica;
+                });
+
+                const lista = document.getElementById('playlist-sortable');
+                lista.innerHTML = '';
+
+                dados.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'glass-panel';
+                    
+                    if (item.tipo === 'separador') {
+                        li.classList.add('is-separator');
+                        li.innerHTML = `<div class="separator-content"><div class="drag-handle">⋮⋮</div><div class="separator-title">${item.musica}</div></div>`;
+                    } else {
+                        if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
+                        const tiposPlay = ['youtube', 'drive', 'dropbox', 'oculto'];
+                        const temMidia = tiposPlay.includes(item.tipo) && item.media.length > 5;
+
+                        li.innerHTML = `
+                            <div class="li-main-row">
+                                <div class="drag-handle">⋮⋮</div>
+                                <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
+                                <div class="song-info">
+                                    <span class="interpreter">${item.cantor}</span>
+                                    <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '👀' : ''}</span>
+                                </div>
+                                ${temMidia ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
+                            </div>
+                            <div class="notes-field" contenteditable="true">${item.notas}</div>
+                        `;
+                    }
+                    lista.appendChild(li);
+                });
+
+                Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
+                
+                // Força a exibição inicial dos itens carregados
+                const todosLIs = lista.querySelectorAll('li');
+                todosLIs.forEach(li => li.style.display = li.classList.contains('is-separator') ? "block" : "flex");
+
+            } catch (e) { console.error(e); }
+        }
+
+        function tocar(tipo, media, cantor, musica) {
+            const container = document.getElementById('main-player-container');
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            const btn = document.getElementById('btn-toggle');
+            const status = document.getElementById('now-playing');
+            
+            container.classList.remove('player-minimized');
+            btn.innerText = '✕';
+            status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+            audio.pause(); audio.src = ""; yt.src = "";
