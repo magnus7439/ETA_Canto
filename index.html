@@ -29,7 +29,6 @@
             position: sticky; top: 10px; width: 95%; max-width: 600px;
             padding: 15px; z-index: 100; text-align: center; margin-bottom: 10px;
             overflow: auto; resize: vertical; min-height: 45px;
-            transition: all 0.3s ease;
         }
 
         .player-minimized #yt-player, .player-minimized audio { display: none !important; }
@@ -114,12 +113,9 @@
             btn.innerText = isMin ? '▼' : '✕';
         }
 
-        // --- NOVA FUNÇÃO DE FILTRO COM NORMALIZAÇÃO ---
         function filtrarLista() {
             const termoOriginal = document.getElementById('search-input').value;
-            // Normaliza o termo de busca: remove acentos e deixa minúsculo
             const termoBusca = termoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            
             const itens = document.querySelectorAll('#playlist-sortable li');
 
             itens.forEach(item => {
@@ -127,10 +123,7 @@
                     item.style.display = termoBusca === "" ? "block" : "none";
                     return;
                 }
-
-                // Normaliza o texto do item da lista para comparar
                 const textoItem = item.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                
                 item.style.display = textoItem.includes(termoBusca) ? "flex" : "none";
             });
         }
@@ -195,4 +188,34 @@
         }
 
         function tocar(tipo, media, cantor, musica) {
-            const container = document.getElementById('main-player-
+            const container = document.getElementById('main-player-container');
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            const btn = document.getElementById('btn-toggle');
+            const status = document.getElementById('now-playing');
+            
+            container.classList.remove('player-minimized');
+            btn.innerText = '✕';
+            status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
+            audio.pause(); audio.src = ""; yt.src = "";
+            audio.style.display = 'none'; yt.style.display = 'none';
+
+            const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
+
+            if (tipo === 'youtube' || ehYouTube) {
+                yt.style.display = 'block';
+                let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
+                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
+            } else {
+                audio.style.display = 'block';
+                let url = media;
+                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
+                audio.src = url;
+                audio.load(); audio.play();
+            }
+        }
+        carregar();
+    </script>
+</body>
+</html>
