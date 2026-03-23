@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo</title>
+    <title>ETA - Canto Domingo a Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -46,7 +46,10 @@
         }
 
         /* BUSCA COM BOTÃO LIMPAR */
-        .search-container { width: 95%; max-width: 600px; margin-bottom: 20px; position: relative; }
+        .search-container { 
+            width: 95%; max-width: 600px; margin-bottom: 20px; 
+            position: relative; display: flex; align-items: center; 
+        }
         #search-input {
             width: 100%; padding: 12px 45px 12px 20px; border-radius: 25px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -57,9 +60,11 @@
         #search-input:focus { border-color: #ff4; }
         
         .clear-search {
-            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; color: rgba(255,255,255,0.5);
-            font-size: 1.2em; cursor: pointer; display: none;
+            position: absolute; right: 12px; 
+            background: rgba(255, 255, 255, 0.15); border: none; 
+            color: #ff4; font-size: 1.1em; cursor: pointer; 
+            display: none; width: 28px; height: 28px; 
+            border-radius: 50%; line-height: 28px; text-align: center; padding: 0;
         }
 
         /* LISTA */
@@ -132,7 +137,6 @@
             const btnClear = document.getElementById('btn-clear');
             const termoOriginal = input.value;
             
-            // Mostra/Esconde botão de limpar
             btnClear.style.display = termoOriginal.length > 0 ? "block" : "none";
 
             const termoBusca = termoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -218,24 +222,4 @@
             btn.innerText = '✕';
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
             audio.pause(); audio.src = ""; yt.src = "";
-            audio.style.display = 'none'; yt.style.display = 'none';
-
-            const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
-
-            if (tipo === 'youtube' || ehYouTube) {
-                yt.style.display = 'block';
-                let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
-                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
-            } else {
-                audio.style.display = 'block';
-                let url = media;
-                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
-                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
-                audio.src = url;
-                audio.load(); audio.play();
-            }
-        }
-        carregar();
-    </script>
-</body>
-</html>
+            audio.style.display = '
