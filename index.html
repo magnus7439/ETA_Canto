@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo à Tarde</title>
+    <title>ETA - Canto Domingo a Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -279,4 +279,20 @@
                 ctrlBack.style.display = 'none';
                 ctrlForward.style.display = 'none';
                 let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
-                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay
+                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
+            } else {
+                audio.style.display = 'block';
+                ctrlBack.style.display = 'inline-block';
+                ctrlForward.style.display = 'inline-block';
+                let url = media;
+                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
+                audio.src = url;
+                audio.load(); audio.play();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', carregar);
+    </script>
+</body>
+</html>
