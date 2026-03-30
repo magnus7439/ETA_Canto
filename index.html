@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo a Tarde</title>
+    <title>ETA - Canto Domingo à Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -31,12 +31,21 @@
             overflow: auto; resize: vertical; min-height: 45px;
         }
 
-        .player-minimized #yt-player, .player-minimized audio { display: none !important; }
+        .player-minimized #yt-player, .player-minimized audio, .player-minimized .player-controls { display: none !important; }
         .player-minimized { resize: none; min-height: 45px; padding-bottom: 10px; }
         
         #now-playing { font-weight: bold; margin-bottom: 8px; font-size: 1em; padding-right: 40px; }
         audio { width: 100%; border-radius: 30px; margin-top: 10px; }
         #yt-player { display: none; width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; margin-top: 15px; }
+
+        /* NOVOS CONTROLES */
+        .player-controls { margin-top: 12px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .btn-control {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ff4; border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.85em;
+            transition: background 0.2s;
+        }
+        .btn-control:active { background: rgba(255, 255, 255, 0.3); }
 
         .toggle-player {
             position: absolute; top: 12px; right: 15px;
@@ -68,7 +77,7 @@
             z-index: 5;
         }
 
-        /* LISTA */
+        /* LISTA (Mantendo suas fontes ajustadas) */
         ul { list-style: none; padding: 0; width: 95%; max-width: 700px; min-height: 100px; }
         li { margin: 12px 0; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
@@ -106,6 +115,12 @@
         <div id="now-playing">Selecione uma faixa</div>
         <audio id="audio-player" controls></audio>
         <iframe id="yt-player" allow="autoplay"></iframe>
+        
+        <div class="player-controls">
+            <button class="btn-control" id="btn-back" onclick="seek(-10)">-10s</button>
+            <button class="btn-control" onclick="restartMedia()">↺ Reiniciar</button>
+            <button class="btn-control" id="btn-forward" onclick="seek(10)">+10s</button>
+        </div>
     </div>
 
     <div class="search-container">
@@ -124,6 +139,28 @@
             const btn = document.getElementById('btn-toggle');
             const isMin = container.classList.toggle('player-minimized');
             btn.innerText = isMin ? '▼' : '✕';
+        }
+
+        function restartMedia() {
+            const audio = document.getElementById('audio-player');
+            const yt = document.getElementById('yt-player');
+            
+            if (audio.style.display !== 'none') {
+                audio.currentTime = 0;
+                audio.play();
+            } else if (yt.style.display !== 'none') {
+                const oldSrc = yt.src;
+                yt.src = ""; // Reset rápido
+                yt.src = oldSrc;
+            }
+        }
+
+        function seek(seconds) {
+            const audio = document.getElementById('audio-player');
+            if (audio.style.display !== 'none') {
+                audio.currentTime = Math.max(0, audio.currentTime + seconds);
+            }
+            // Nota: Seek no Youtube requer API pesada, mantivemos apenas para o Drive por enquanto.
         }
 
         function limparBusca() {
@@ -211,7 +248,6 @@
 
                 Sortable.create(lista, { handle: '.drag-handle', animation: 150 });
                 
-                // IMPORTANTE: Garantir visibilidade sem rodar o filtro de busca
                 const itensCriados = lista.querySelectorAll('li');
                 itensCriados.forEach(li => {
                     li.style.display = li.classList.contains('is-separator') ? 'block' : 'flex';
@@ -226,6 +262,8 @@
             const yt = document.getElementById('yt-player');
             const btn = document.getElementById('btn-toggle');
             const status = document.getElementById('now-playing');
+            const ctrlBack = document.getElementById('btn-back');
+            const ctrlForward = document.getElementById('btn-forward');
             
             container.classList.remove('player-minimized');
             btn.innerText = '✕';
@@ -237,20 +275,8 @@
 
             if (tipo === 'youtube' || ehYouTube) {
                 yt.style.display = 'block';
+                // Esconde botões de +/- 10s no Youtube pois não funcionam sem API oficial
+                ctrlBack.style.display = 'none';
+                ctrlForward.style.display = 'none';
                 let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
-                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
-            } else {
-                audio.style.display = 'block';
-                let url = media;
-                if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
-                else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
-                audio.src = url;
-                audio.load(); audio.play();
-            }
-        }
-
-        // Carregar ao iniciar
-        window.addEventListener('DOMContentLoaded', carregar);
-    </script>
-</body>
-</html>
+                yt.src = `https://www.youtube.com/embed/${ytID}?autoplay
