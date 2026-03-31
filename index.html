@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ETA - Canto Domingo a Tarde</title>
+    <title>ETA - Canto Domingo de Tarde</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -15,7 +15,7 @@
             background-image: url('image_6.png'); 
             background-size: cover; background-position: center;
             background-repeat: no-repeat; background-attachment: fixed;
-            padding-bottom: 100px; /* Espaço para os botões flutuantes */
+            padding-bottom: 100px; 
         }
 
         .glass-panel {
@@ -50,7 +50,7 @@
         .floating-controls {
             position: fixed; bottom: 20px; left: 50%;
             transform: translateX(-50%);
-            display: none; /* Só aparece quando algo toca */
+            display: none; 
             gap: 10px; z-index: 1000;
             width: 90%; max-width: 500px; justify-content: center;
         }
@@ -97,8 +97,6 @@
         li.is-separator { background: rgba(100, 50, 150, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.5); }
         .separator-content { display: grid; grid-template-columns: 35px 1fr; align-items: center; }
         .separator-title { font-size: 1.2em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-align: center; width: 100%; }
-
-        li.is-hidden-mode { border: 1px solid #ff4; background: rgba(255, 255, 68, 0.05); }
 
         .li-main-row { display: grid; grid-template-columns: 35px 35px 1fr 50px; align-items: center; gap: 10px; }
         .drag-handle { cursor: grab; color: rgba(255,255,255,0.4); font-size: 22px; }
@@ -168,7 +166,6 @@
         function pauseMedia() {
             const audio = document.getElementById('audio-player');
             const btn = document.getElementById('btn-pause-float');
-            // Nota: Pausar YouTube via iframe simples é restrito, funciona 100% no Drive/Dropbox
             if (audio.style.display !== 'none') {
                 if (audio.paused) {
                     audio.play();
@@ -177,9 +174,6 @@
                     audio.pause();
                     btn.innerText = "▶ Play";
                 }
-            } else {
-                // Para YouTube, como não temos a API carregada, o Reiniciar e Stop são mais eficazes
-                alert("Para YouTube, use Reiniciar ou Stop.");
             }
         }
 
@@ -243,7 +237,6 @@
                         li.classList.add('is-separator');
                         li.innerHTML = `<div class="separator-content"><div class="drag-handle">⋮⋮</div><div class="separator-title">${item.musica}</div></div>`;
                     } else {
-                        if (item.tipo === 'oculto') li.classList.add('is-hidden-mode');
                         const temMidia = ['youtube', 'drive', 'dropbox', 'oculto'].includes(item.tipo) && item.media.length > 5;
                         li.innerHTML = `
                             <div class="li-main-row">
@@ -251,7 +244,7 @@
                                 <input type="checkbox" onchange="this.closest('li').classList.toggle('done')">
                                 <div class="song-info">
                                     <span class="interpreter">${item.cantor}</span>
-                                    <span class="song-title">${item.musica} ${item.tipo === 'oculto' ? '👀' : ''}</span>
+                                    <span class="song-title">${item.musica}</span>
                                 </div>
                                 ${temMidia ? `<button class="btn-play" onclick="tocar('${item.tipo}', '${item.media}', '${item.cantor}', '${item.musica}')">▶</button>` : '<div class="no-btn"></div>'}
                             </div>
@@ -269,20 +262,27 @@
             const audio = document.getElementById('audio-player');
             const yt = document.getElementById('yt-player');
             const status = document.getElementById('now-playing');
+            const floatPauseBtn = document.getElementById('btn-pause-float');
+            
             document.getElementById('float-ctrl').style.display = 'flex';
-            document.getElementById('btn-pause-float').innerText = "⏸ Pausar";
+            floatPauseBtn.innerText = "⏸ Pausar";
             
             status.innerHTML = `Tocando: <b>${musica}</b><br><small>${cantor}</small>`;
             audio.pause(); audio.src = ""; yt.src = "";
             audio.style.display = 'none'; yt.style.display = 'none';
             
             const ehYouTube = media.includes('youtube.com') || media.includes('youtu.be') || (media.length === 11 && !media.includes('.'));
+            
             if (tipo === 'youtube' || ehYouTube) {
                 yt.style.display = 'block';
+                // ESCONDER botão de pausa para YouTube
+                floatPauseBtn.style.display = 'none';
                 let ytID = media.includes('v=') ? media.split('v=')[1].split('&')[0] : (media.includes('be/') ? media.split('be/')[1].split('?')[0] : media);
                 yt.src = `https://www.youtube.com/embed/${ytID}?autoplay=1`;
             } else {
                 audio.style.display = 'block';
+                // MOSTRAR botão de pausa para arquivos
+                floatPauseBtn.style.display = 'flex';
                 let url = media;
                 if (url.includes('dropbox.com')) url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
                 else if (!url.includes('http')) url = `https://docs.google.com/uc?export=open&id=${url}`;
