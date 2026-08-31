@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Multitrack (6 Pistas)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #121212;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .multitrack-container {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .master-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn-master {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+        .btn-play { background: #28a745; color: #fff; }
+        .btn-stop { background: #dc3545; color: #fff; }
+
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .track-row {
+            display: grid;
+            grid-template-columns: 140px 90px 1fr;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.03);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .track-name { font-weight: bold; font-size: 0.9em; color: #ff4; }
+
+        /* Estilo dos Botões de Mute/Unmute por Pista */
+        .btn-mute {
+            padding: 8px 12px;
+            border: 1px solid #28a745;
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mute.is-muted {
+            background: rgba(220, 53, 69, 0.8);
+            border-color: #dc3545;
+            color: #fff;
+        }
+
+        input[type=range] { width: 100%; cursor: pointer; }
+        
+        #status-text { font-size: 0.9em; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="multitrack-container">
+        <h2>🎛️ Player Multitrack (6 Pistas)</h2>
+
+        <div class="master-controls">
+            <button id="btn-play-master" class="btn-master btn-play" onclick="togglePlay()" disabled>Carregando...</button>
+            <button class="btn-master btn-stop" onclick="stopAll()">■ Stop</button>
+            <span id="status-text">Aguardando áudios...</span>
+        </div>
+
+        <div class="track-list" id="track-container">
+            <!-- As 6 Pistas com botão Mute individual são geradas via JS -->
+        </div>
+    </div>
+
+    <script>
+        // 1. Definição das 6 pistas
+        const AUDIO_URLS = [
+            { name: "01. Bateria",       url: "https://seusite.com/audio/bateria.mp3" },
+            { name: "02. Baixo",         url: "https://seusite.com/audio/baixo.mp3" },
+            { name: "03. Guitarras",     url: "https://seusite.com/audio/guitarra.mp3" },
+            { name: "04. Teclado",       url: "https://seusite.com/audio/teclado.mp3" },
+            { name: "05. Voz Guia",      url: "https://seusite.com/audio/voz.mp3" },
+            { name: "06. Metrônomo",     url: "https://seusite.com/audio/click.mp3" }
+        ];
+
+        let audioCtx;
+        let audioBuffers = [];
+        let sourceNodes = [];
+        let gainNodes = [];
+        
+        // Estado de Mute individual para cada uma das 6 pistas
+        let muteStates = [false, false, false, false, false, false];
+
+        let isPlaying = false;
+        let isLoaded = false;
+        let startTime = 0;
+        let pauseOffset = 0;
+
+        // Renderiza a interface com botão Mute/Unmute para cada pista
+        function renderTracks() {
+            const container = document.getElementById('track-container');
+            container.innerHTML = '';
+
+            AUDIO_URLS.forEach((track, index) => {
+                container.innerHTML += `
+                    <div class="track-row">
+                        <span class="track-name">${track.name}</span>
+                        <button class="btn-mute" id="mute-btn-${index}" onclick="toggleTrackMute(${index})">
+                            🔊 LIGADO
+                        </button>
+                        <input type="range" id="vol-${index}" min="0" max="1" step="0.01" value="1" oninput="changeVolume(${index}, this.value)">
+                    </div>
+                `;
+            });
+        }
+
+        // Carrega os áudios
+        async function loadAllTracks() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const statusText = document.getElementById('status-text');
+
+            try {
+                const promises = AUDIO_URLS.map(async (item, index) => {
+                    statusText.innerText = `Baixando faixa ${index + 1} de 6...`;
+                    const response = await fetch(item.url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    return await audioCtx.decodeAudioData(arrayBuffer);
+                });
+
+                audioBuffers = await Promise.all(promises);
+                isLoaded = true;
+                
+                statusText.innerText = "Pronto para reproduzir!";
+                const btnPlay = document.getElementById('btn-play-master');
+                btnPlay.innerText = "▶ PLAY";
+                btnPlay.disabled = false;
+            } catch (err) {
+                console.error("Erro ao carregar mídias:", err);
+                statusText.innerText = "Erro ao carregar áudios.";
+            }
+        }
+
+        function togglePlay() {
+            if (!isLoaded) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (isPlaying) {
+                pauseAll();
+            } else {
+                playAll();
+            }
+        }
+
+        function playAll() {
+            sourceNodes = [];
+            gainNodes = [];
+            const now = audioCtx.currentTime;
+
+            audioBuffers.forEach((buffer, index) => {
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+
+                const gain = audioCtx.createGain();
+                const volSlider = document.getElementById(`vol-${index}`).value;
+                
+                // Aplica volume normal ou 0 se a pista estiver mutada
+                gain.gain.value = muteStates[index] ? 0 : volSlider;
+
+                source.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                source.start(now, pauseOffset);
+
+                sourceNodes.push(source);
+                gainNodes.push(gain);
+            });
+
+            startTime = audioCtx.currentTime - pauseOffset;
+            isPlaying = true;
+            document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
+            document.getElementById('status-text').innerText = "Tocando...";
+        }
+
+        function pauseAll() {
+            if (!isPlaying) return;
+            pauseOffset = audioCtx.currentTime - startTime;
+            sourceNodes.forEach(source => source.stop());
+            isPlaying = false;
+            document.getElementById('btn-play-master').innerText = "▶ PLAY";
+            document.getElementById('status-text').innerText = "Pausado";
+        }
+
+        function stopAll() {
+            if (sourceNodes.length > 0) {
+                sourceNodes.forEach(source => {
+                    try { source.stop(); } catch(e){}
+                });
+            }
+            isPlaying = false;
+            pauseOffset = 0;
+            document.getElementById('btn-play-master').innerText = "▶ PLAY";
+            document.getElementById('status-text').innerText = "Parado";
+        }
+
+        // Função de volume em tempo real
+        function changeVolume(trackIndex, value) {
+            if (gainNodes[trackIndex] && !muteStates[trackIndex]) {
+                gainNodes[trackIndex].gain.value = value;
+            }
+        }
+
+        // FUNÇÃO PRINCIPAL: Ligar / Desligar (Mute / Unmute) de cada pista
+        function toggleTrackMute(index) {
+            // Inverte o estado de Mute da pista clicada
+            muteStates[index] = !muteStates[index];
+            
+            const btn = document.getElementById(`mute-btn-${index}`);
+            const sliderVal = document.getElementById(`vol-${index}`).value;
+
+            if (muteStates[index]) {
+                // Estado: MUTADO
+                btn.classList.add('is-muted');
+                btn.innerText = "🔇 MUTE";
+                if (gainNodes[index]) {
+                    gainNodes[index].gain.value = 0; // Silencia a pista instantaneamente
+                }
+            } else {
+                // Estado: DESMUTADO (Ativo)
+                btn.classList.remove('is-muted');
+                btn.innerText = "🔊 LIGADO";
+                if (gainNodes[index]) {
+                    gainNodes[index].gain.value = sliderVal; // Restaura o volume original do slider
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            renderTracks();
+            loadAllTracks();
+        });
+    </script>
+</body>
+</html>
